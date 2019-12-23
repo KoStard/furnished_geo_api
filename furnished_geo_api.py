@@ -47,6 +47,14 @@ parser.add_argument('--district', default="All", help="District")
 parser.add_argument('--hotel', default=0)
 
 parser.add_argument(
+    '--gmaps_api_key',
+    help=
+    ("API Key of Google Maps API, used if you want to export to a "
+     "valid Google Maps file. You can get it for free from "
+     "https://developers.google.com/maps/documentation/javascript/get-api-key"
+     ))
+
+parser.add_argument(
     '--to_json',
     action='store_true',
     help='Will return the results as JSON string')
@@ -136,7 +144,7 @@ def get_locations(
     return points
 
 
-def save_to_google_maps(points: dict, filename: str):
+def save_to_google_maps(points: dict, filename: str, gmaps_api_key):
     points = {
         tuple(float(e) for e in k.split('/')): v
         for (k, v) in points.items()
@@ -145,7 +153,8 @@ def save_to_google_maps(points: dict, filename: str):
                                 points, [0, 0])
     center_x /= len(points)
     center_y /= len(points)
-    plotter = gmplot.GoogleMapPlotter(center_x, center_y, 13)
+    plotter = gmplot.GoogleMapPlotter(
+        center_x, center_y, 13, apikey=gmaps_api_key)
     for lat, lng in points:
         plotter.marker(lat, lng)
 
@@ -154,13 +163,15 @@ def save_to_google_maps(points: dict, filename: str):
 
 to_json = args.pop('to_json')
 to_gmaps = args.pop('to_gmaps')
+gmaps_api_key = args.pop('gmaps_api_key')
 file_name_base = 'Options-{}-{}.'.format(args['check_in_time'],
                                          args['check_out_time'])
 
 points = get_locations(**args)
 
 if to_gmaps:
-    save_to_google_maps(points, file_name_base + 'html')
+    save_to_google_maps(
+        points, file_name_base + 'html', gmaps_api_key=gmaps_api_key)
 
 if to_json or not to_gmaps:
     print(json.dumps(points))
