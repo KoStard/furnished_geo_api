@@ -18,7 +18,7 @@ https://www.furnished.lu/index.php?
         limitAll=9
 
 You can use this to load data from all pages:
-python3.7 furnished_geo_api.py 2020-01-15 2020-03-31 --path=110 --min_price=10 \
+python3 furnished_geo_api.py 2020-01-15 2020-03-31 --path=110 --min_price=10 \
     --max_price=2500 \--min_mates=1 --max_mates=30 --room_type=All \
         --district=All --hotel=0
 """
@@ -92,9 +92,7 @@ def get_page(
            'route=product/category&' + "&".join("{}={}".format(k, v)
                                                 for (k, v) in data.items()
                                                 if v is not None))
-    print(url)
-    # resp = requests.get(url)
-    return []
+    resp = requests.get(url)
     print(f"Loaded page {page}")
     return resp.json()
 
