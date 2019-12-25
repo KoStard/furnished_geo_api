@@ -30,40 +30,44 @@ import gmplot
 import argparse
 from functools import reduce
 
-parser = argparse.ArgumentParser(
-    description='Load all available results from Furnished.lu')
-parser.add_argument('check_in_time', help='YYYY-MM-DD')
-parser.add_argument('check_out_time', help='YYYY-MM-DD')
-parser.add_argument('--path', default=110, type=int)
-parser.add_argument('--min_price', default=10, help="Minimum price", type=int)
-parser.add_argument(
-    '--max_price', default=2500, help="Maximum price", type=int)
-parser.add_argument(
-    '--min_mates', default=1, help="Minimum Roommates", type=int)
-parser.add_argument(
-    '--max_mates', default=30, help="Maxmimum Roommates", type=int)
-parser.add_argument('--room_type', default="All", help="Room type")
-parser.add_argument('--district', default="All", help="District")
-parser.add_argument('--hotel', default=0)
 
-parser.add_argument(
-    '--gmaps_api_key',
-    help=
-    ("API Key of Google Maps API, used if you want to export to a "
-     "valid Google Maps file. You can get it for free from "
-     "https://developers.google.com/maps/documentation/javascript/get-api-key"
-     ))
+def get_args() -> dict:
+    parser = argparse.ArgumentParser(
+        description='Load all available results from Furnished.lu')
+    parser.add_argument('check_in_time', help='YYYY-MM-DD')
+    parser.add_argument('check_out_time', help='YYYY-MM-DD')
+    parser.add_argument('--path', default=110, type=int)
+    parser.add_argument(
+        '--min_price', default=10, help="Minimum price", type=int)
+    parser.add_argument(
+        '--max_price', default=2500, help="Maximum price", type=int)
+    parser.add_argument(
+        '--min_mates', default=1, help="Minimum Roommates", type=int)
+    parser.add_argument(
+        '--max_mates', default=30, help="Maxmimum Roommates", type=int)
+    parser.add_argument('--room_type', default="All", help="Room type")
+    parser.add_argument('--district', default="All", help="District")
+    parser.add_argument('--hotel', default=0)
 
-parser.add_argument(
-    '--to_json',
-    action='store_true',
-    help='Will return the results as JSON string')
-parser.add_argument(
-    '--to_gmaps',
-    action='store_true',
-    help='Will export the results into the Google Maps')
+    parser.add_argument(
+        '--gmaps_api_key',
+        help=
+        ("API Key of Google Maps API, used if you want to export to a "
+         "valid Google Maps file. You can get it for free from "
+         "https://developers.google.com/maps/documentation/javascript/get-api-key"
+         ))
 
-args: dict = dict(vars(parser.parse_args()))
+    parser.add_argument(
+        '--to_json',
+        action='store_true',
+        help='Will return the results as JSON string')
+    parser.add_argument(
+        '--to_gmaps',
+        action='store_true',
+        help='Will export the results into the Google Maps')
+
+    args: dict = dict(vars(parser.parse_args()))
+    return args
 
 
 def get_page(
@@ -161,17 +165,19 @@ def save_to_google_maps(points: dict, filename: str, gmaps_api_key):
     plotter.draw(filename)
 
 
-to_json = args.pop('to_json')
-to_gmaps = args.pop('to_gmaps')
-gmaps_api_key = args.pop('gmaps_api_key')
-file_name_base = 'Options-{}-{}.'.format(args['check_in_time'],
-                                         args['check_out_time'])
+if __name__ == '__main__':
+    args = get_args()
+    to_json = args.pop('to_json')
+    to_gmaps = args.pop('to_gmaps')
+    gmaps_api_key = args.pop('gmaps_api_key')
+    file_name_base = 'Options-{}-{}.'.format(args['check_in_time'],
+                                             args['check_out_time'])
 
-points = get_locations(**args)
+    points = get_locations(**args)
 
-if to_gmaps:
-    save_to_google_maps(
-        points, file_name_base + 'html', gmaps_api_key=gmaps_api_key)
+    if to_gmaps:
+        save_to_google_maps(
+            points, file_name_base + 'html', gmaps_api_key=gmaps_api_key)
 
-if to_json or not to_gmaps:
-    print(json.dumps(points))
+    if to_json or not to_gmaps:
+        print(json.dumps(points))
