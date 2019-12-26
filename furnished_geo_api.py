@@ -2,7 +2,7 @@
 Example URL:
 https://www.furnished.lu/index.php?
     route=module/layer_navigation/getMapClusters&
-https://www.furnished.lu/index.php?
+hcheck_in_timefurnished.lu/index.php?
     route=product/category&
         path=110&
         min_price=10&
@@ -23,31 +23,17 @@ python3 furnished_geo_api.py 2020-01-15 2020-03-31 --path=110 --min_price=10 \
         --district=All --hotel=0
 """
 
-import requests
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 import json
 import gmplot
-import argparse
 from functools import reduce
+from furnished_layer_loader import get_page
+from furnished_cli_parser import get_parser
+import asyncio
 
 
 def get_args() -> dict:
-    parser = argparse.ArgumentParser(
-        description='Load all available results from Furnished.lu')
-    parser.add_argument('check_in_time', help='YYYY-MM-DD')
-    parser.add_argument('check_out_time', help='YYYY-MM-DD')
-    parser.add_argument('--path', default=110, type=int)
-    parser.add_argument(
-        '--min_price', default=10, help="Minimum price", type=int)
-    parser.add_argument(
-        '--max_price', default=2500, help="Maximum price", type=int)
-    parser.add_argument(
-        '--min_mates', default=1, help="Minimum Roommates", type=int)
-    parser.add_argument(
-        '--max_mates', default=30, help="Maxmimum Roommates", type=int)
-    parser.add_argument('--room_type', default="All", help="Room type")
-    parser.add_argument('--district', default="All", help="District")
-    parser.add_argument('--hotel', default=0)
+    parser = get_parser()
 
     parser.add_argument(
         '--gmaps_api_key',
@@ -70,46 +56,7 @@ def get_args() -> dict:
     return args
 
 
-def get_page(
-        checkintime,
-        checkouttime,
-        page,
-        path=None,
-        min_price=10,
-        max_price=2500,
-        min_mates=1,
-        max_mates=30,
-        room_type="All",
-        district="All",
-        hotel=0,
-        limitAll=9,
-):
-    data = OrderedDict((
-        ("path", path),
-        ("min_price", min_price),
-        ("max_price", max_price),
-        ("min_mates", min_mates),
-        ("max_mates", max_mates),
-        ("room_type", room_type),
-        ("district", district),
-        ("checkintime", checkintime),
-        ("checkouttime", checkouttime),
-        ("hotel", hotel),
-        ("page", page),
-        ("limitAll", limitAll),
-    ))
-    url = ('https://www.furnished.lu/index.php?'
-           'route=module/layer_navigation/getMapClusters&'
-           'https://www.furnished.lu/index.php?'
-           'route=product/category&' + "&".join("{}={}".format(k, v)
-                                                for (k, v) in data.items()
-                                                if v is not None))
-    resp = requests.get(url)
-    print(f"Loaded page {page}")
-    return resp.json()
-
-
-def get_locations(
+async def get_locations(
         check_in_time,
         check_out_time,
         path=None,
@@ -128,7 +75,8 @@ def get_locations(
     page_data = None
     points = defaultdict(list)
     while page == 1 or page_data:
-        page_data = get_page(
+        page_data = await get_page(
+            'getMapClusters',
             check_in_time,
             check_out_time,
             page,
@@ -173,7 +121,7 @@ if __name__ == '__main__':
     file_name_base = 'Options-{}-{}.'.format(args['check_in_time'],
                                              args['check_out_time'])
 
-    points = get_locations(**args)
+    points = asyncio.run(get_locations(**args))
 
     if to_gmaps:
         save_to_google_maps(
